@@ -1,23 +1,35 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
-    "api/index.py":   { "memory": 1024, "maxDuration": 30 },
-    "api/data.py":    { "memory": 1024, "maxDuration": 60 },
-    "api/refresh.py": { "memory": 1024, "maxDuration": 60 }
+    "api/index.py": {
+      "memory": 1024,
+      "maxDuration": 60
+    }
   },
   "rewrites": [
-    { "source": "/", "destination": "/api/index" },
-    { "source": "/dashboard", "destination": "/api/index" }
+    {
+      "source": "/(.*)",
+      "destination": "/api/index"
+    }
   ],
   "crons": [
-    { "path": "/api/refresh", "schedule": "30 1 * * *" }
+    {
+      "path": "/api/refresh",
+      "schedule": "30 1 * * *"
+    }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
-        { "key": "X-Frame-Options", "value": "SAMEORIGIN" }
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        }
       ]
     }
   ]
