@@ -52,13 +52,32 @@ In Vercel → Settings → Environment Variables, for **all** environments:
 
 | Name | Value |
 |---|---|
-| `GOOGLE_CREDS` | the entire service-account JSON, pasted as one value |
+| `GOOGLE_CREDS` | the service-account key, **base64-encoded on one line** |
 | `DASH_USER` | the username your team types |
 | `DASH_PASS` | the password your team types |
 | `CRON_SECRET` | any long random string; Vercel signs cron calls with it |
 
-`KV_REST_API_URL` and `KV_REST_API_TOKEN` are added automatically when you
-attach a KV store (Storage → Create → KV → connect to this project).
+**`GOOGLE_CREDS` must be base64, not raw JSON.** The key's `private_key` field
+contains newlines, and a multi-line value gets mangled by the environment-variable
+field. Generate the single-line form with:
+
+```bash
+python -c "import base64;print(base64.b64encode(open('service_account1.json','rb').read()).decode())"
+```
+
+Raw JSON is still accepted for local runs, so `test_local.py` can point straight
+at the file.
+
+### Caching (optional)
+
+Vercel retired its own KV product; the equivalent now comes from
+**Storage → Marketplace → Upstash → Redis** (free tier). Attaching it injects
+`UPSTASH_REDIS_REST_URL` / `_TOKEN`, which `store.py` picks up automatically —
+it also accepts the older `KV_REST_API_*` names.
+
+**This is optional.** With no store attached everything still works; `/api/data`
+computes on demand and the first load after a deploy takes ~24s, with a loading
+screen while it runs. Attach Redis when you want that to be instant.
 
 ### 2. Share the sheets
 

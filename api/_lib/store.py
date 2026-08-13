@@ -23,9 +23,24 @@ TIMEOUT = 15
 
 
 def _cfg():
-    url = os.environ.get('KV_REST_API_URL')
-    tok = os.environ.get('KV_REST_API_TOKEN')
-    return (url.rstrip('/'), tok) if url and tok else (None, None)
+    """Find a Redis-compatible REST endpoint under any of its names.
+
+    Vercel retired its own KV product; the same store now arrives through the
+    Marketplace as Upstash, which injects UPSTASH_* names. Older projects still
+    have KV_*, and the Marketplace sometimes prefixes with the integration name.
+    Accept whichever pair is present rather than pinning to one vendor.
+    """
+    pairs = [
+        ('KV_REST_API_URL', 'KV_REST_API_TOKEN'),
+        ('UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN'),
+        ('REDIS_REST_URL', 'REDIS_REST_TOKEN'),
+        ('STORAGE_REST_API_URL', 'STORAGE_REST_API_TOKEN'),
+    ]
+    for u, t in pairs:
+        url, tok = os.environ.get(u), os.environ.get(t)
+        if url and tok:
+            return url.rstrip('/'), tok
+    return None, None
 
 
 def available():

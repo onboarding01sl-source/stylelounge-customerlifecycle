@@ -38,6 +38,27 @@ TABS = [
 ]
 
 
+def _decode_creds(raw):
+    """Accept the service-account key as base64 or as raw JSON.
+
+    Base64 is the recommended form: the key's private_key field contains
+    newlines, and pasting a multi-line value into an environment-variable
+    field mangles it. Raw JSON is still accepted so a local run can point
+    GOOGLE_CREDS straight at the file contents.
+    """
+    raw = raw.strip()
+    if raw.startswith('{'):
+        return json.loads(raw)
+    import base64
+    try:
+        decoded = base64.b64decode(raw, validate=True).decode('utf-8')
+    except Exception as exc:                               # noqa: BLE001
+        raise RuntimeError(
+            'GOOGLE_CREDS is neither JSON nor valid base64 (%s). Re-copy it '
+            'from GOOGLE_CREDS_base64.txt as a single line.' % type(exc).__name__)
+    return json.loads(decoded)
+
+
 def _dedupe(header):
     """Sheets happily ships duplicate headers ('Name', 'Name')."""
     cols, seen = [], {}
@@ -62,9 +83,9 @@ class SheetsSource:
         raw = os.environ.get('GOOGLE_CREDS')
         if not raw:
             raise RuntimeError(
-                'GOOGLE_CREDS is not set. Paste the full service-account JSON '
-                'into the Vercel environment variable of that name.')
-        info = json.loads(raw)
+                'GOOGLE_CREDS is not set. Put the service-account key in the '
+                'Vercel environment variable of that name, base64-encoded.')
+        info = _decode_creds(raw)
         creds = Credentials.from_service_account_info(
             info, scopes=['https://www.googleapis.com/auth/spreadsheets.readonly'])
         self.api = build('sheets', 'v4', credentials=creds,

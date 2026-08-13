@@ -1,6 +1,7 @@
 # Never commit credentials or customer data. Both live in Vercel env vars
 # or stay on the operator's machine.
 service_account*.json
+GOOGLE_CREDS_base64.txt
 *.creds.json
 .passphrase
 .dataurl
