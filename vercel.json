@@ -8,16 +8,8 @@
   },
   "rewrites": [
     {
-      "source": "/api/data",
-      "destination": "/api/index?route=data"
-    },
-    {
-      "source": "/api/refresh",
-      "destination": "/api/index?route=refresh"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/api/index?route=page"
+      "source": "/((?!api/).*)",
+      "destination": "/api/index"
     }
   ],
   "crons": [
