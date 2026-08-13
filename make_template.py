@@ -32,7 +32,7 @@ BOOT = """/* ---------- boot: fetch the payload from the authenticated API -----
 (async function boot(){
   const load = document.getElementById('loading');
   try {
-    const res = await fetch('/api/data', {cache:'no-store'});
+    const res = await fetch('/api/index?route=data', {cache:'no-store'});
     if (!res.ok) throw new Error('HTTP ' + res.status);
     D = await res.json();
     if (D && D.error) throw new Error(D.detail || D.error);
@@ -84,8 +84,8 @@ for bad, msg in [('decryptPayload', 'decryption code survived'),
                  ('__SL_INLINE__', 'inline-payload branch survived')]:
     if bad in body:
         raise SystemExit('FAIL: %s (%r still present)' % (msg, bad))
-if "fetch('/api/data'" not in body:
-    raise SystemExit('FAIL: /api/data fetch missing')
+if "fetch('/api/index?route=data'" not in body:
+    raise SystemExit('FAIL: data fetch missing or not pointing at the function')
 
 print('wrote %s (%.1f KB)' % (OUT, os.path.getsize(OUT) / 1024))
 print('checks passed: no gate, no decryption, fetches /api/data')

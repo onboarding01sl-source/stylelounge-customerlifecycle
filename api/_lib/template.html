@@ -497,7 +497,7 @@ render();
 (async function boot(){
   const load = document.getElementById('loading');
   try {
-    const res = await fetch('/api/data', {cache:'no-store'});
+    const res = await fetch('/api/index?route=data', {cache:'no-store'});
     if (!res.ok) throw new Error('HTTP ' + res.status);
     D = await res.json();
     if (D && D.error) throw new Error(D.detail || D.error);
