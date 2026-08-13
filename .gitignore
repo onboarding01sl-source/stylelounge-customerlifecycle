@@ -1,0 +1,19 @@
+# Never commit credentials or customer data. Both live in Vercel env vars
+# or stay on the operator's machine.
+service_account*.json
+*.creds.json
+.passphrase
+.dataurl
+.env
+.env.*
+
+# Generated data - the whole point of this deployment is that none of it
+# is ever stored in git.
+dash.json
+events.csv
+customers.csv
+*.enc.json
+
+.vercel/
+__pycache__/
+*.pyc

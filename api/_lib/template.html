@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Style Lounge — Customer Lifecycle</title>
+<style>
+  :root{
+    color-scheme:light;
+    --ground:#f7f4f1; --surface:#fffdfb; --surface-2:#f2ede9;
+    --ink:#241d29; --ink-2:#6c6270; --ink-3:#948a99;
+    --rule:#e3dcd6; --hair:#efe9e4;
+    --accent:#7b3f6b; --accent-soft:#f0e4ee; --brass:#a8763c; --on-accent:#fff;
+    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a;
+    --good:#0ca30c; --warn:#fab219; --crit:#d03b3b;
+    --ramp1:#86b6ef; --ramp2:#5598e7; --ramp3:#3987e5; --ramp4:#256abf; --ramp5:#184f95;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --sans:system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:where(:not([data-theme="light"])){
+      color-scheme:dark;
+      --ground:#16131a; --surface:#1e1a23; --surface-2:#272130;
+      --ink:#f5f1f4; --ink-2:#b4a9b8; --ink-3:#8b8092;
+      --rule:#332c3b; --hair:#2a2432;
+      --accent:#c88bb6; --accent-soft:#33253060; --brass:#c99a5e; --on-accent:#1e1a23;
+      --s1:#3987e5; --s2:#d95926; --s3:#199e70;
+      --good:#0ca30c; --warn:#fab219; --crit:#d03b3b;
+      --ramp1:#184f95; --ramp2:#256abf; --ramp3:#2a78d6; --ramp4:#3987e5; --ramp5:#5598e7;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme:dark;
+    --ground:#16131a; --surface:#1e1a23; --surface-2:#272130;
+    --ink:#f5f1f4; --ink-2:#b4a9b8; --ink-3:#8b8092;
+    --rule:#332c3b; --hair:#2a2432;
+    --accent:#c88bb6; --accent-soft:#33253060; --brass:#c99a5e; --on-accent:#1e1a23;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70;
+    --ramp1:#184f95; --ramp2:#256abf; --ramp3:#2a78d6; --ramp4:#3987e5; --ramp5:#5598e7;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+       font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1140px;margin:0 auto;padding:0 24px 96px}
+  a{color:var(--accent)}
+
+  /* ---------- masthead ---------- */
+  .mast{padding:56px 0 28px;border-bottom:1px solid var(--rule)}
+  .eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+           color:var(--brass);font-weight:600;margin:0 0 14px}
+  .mast h1{font-family:var(--serif);font-weight:400;font-size:clamp(34px,5vw,52px);
+           line-height:1.06;margin:0 0 14px;letter-spacing:-.01em;text-wrap:balance}
+  .mast p{margin:0;max-width:64ch;color:var(--ink-2);font-size:16px}
+  .stamp{margin-top:18px;font-size:12.5px;color:var(--ink-3);display:flex;
+         gap:8px;flex-wrap:wrap;align-items:center}
+  .dot{width:4px;height:4px;border-radius:50%;background:var(--ink-3);display:inline-block}
+
+  /* ---------- bands ---------- */
+  section{padding:44px 0;border-bottom:1px solid var(--hair)}
+  section:last-of-type{border-bottom:0}
+  h2{font-family:var(--serif);font-weight:400;font-size:27px;margin:0 0 6px;letter-spacing:-.01em}
+  .sub{color:var(--ink-2);margin:0 0 26px;max-width:70ch;font-size:14.5px}
+
+  /* ---------- kpi ---------- */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:10px}
+  .kpi{background:var(--surface);border:1px solid var(--rule);border-radius:3px;padding:18px 18px 16px}
+  .kpi .k{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);
+          font-weight:600;margin-bottom:7px}
+  .kpi .v{font-size:31px;line-height:1;font-weight:550;letter-spacing:-.02em}
+  .kpi .n{font-size:12.5px;color:var(--ink-2);margin-top:6px}
+
+  /* ---------- finding ---------- */
+  .finding{background:var(--surface);border:1px solid var(--rule);
+           border-left:3px solid var(--crit);border-radius:3px;padding:22px 24px;margin-bottom:26px}
+  .finding.pos{border-left-color:var(--good)}
+  .finding h3{margin:0 0 8px;font-size:16.5px;font-weight:600;display:flex;
+              align-items:center;gap:9px}
+  .finding p{margin:0;color:var(--ink-2);font-size:14.5px;max-width:72ch}
+  .badge{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;
+         padding:3px 7px;border-radius:2px;color:#fff;background:var(--crit)}
+  .badge.good{background:var(--good)}
+
+  /* ---------- bars ---------- */
+  .chart{background:var(--surface);border:1px solid var(--rule);border-radius:3px;padding:22px 24px}
+  .chart h4{margin:0 0 3px;font-size:14.5px;font-weight:600}
+  .chart .cap{margin:0 0 20px;font-size:12.5px;color:var(--ink-3)}
+  .row{display:grid;grid-template-columns:132px 1fr 74px;align-items:center;
+       gap:12px;margin-bottom:9px}
+  .row .lbl{font-size:13px;color:var(--ink-2);text-align:right}
+  .track{background:var(--surface-2);border-radius:2px;height:22px;position:relative;overflow:visible}
+  .bar{height:22px;border-radius:0 3px 3px 0;transition:opacity .12s;position:relative}
+  .row .val{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+  .row:hover .bar{opacity:.82}
+
+  .grp{display:grid;grid-template-columns:132px 1fr;gap:12px;align-items:center;margin-bottom:14px}
+  .gbars{display:flex;flex-direction:column;gap:2px}
+  .gbar{height:13px;border-radius:0 2px 2px 0;min-width:1px}
+  .gwrap{display:flex;align-items:center;gap:8px}
+  .gwrap span{font-size:11.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+
+  .legend{display:flex;gap:16px;flex-wrap:wrap;margin:16px 0 0;padding-top:14px;
+          border-top:1px solid var(--hair)}
+  .lg{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-2)}
+  .sw{width:10px;height:10px;border-radius:2px;flex:none}
+
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media(max-width:820px){.two{grid-template-columns:1fr}}
+
+  /* ---------- funnel ---------- */
+  .fn{display:flex;flex-direction:column;gap:2px}
+  .fstep{display:grid;grid-template-columns:118px 1fr;gap:14px;align-items:center}
+  .fbar{height:38px;border-radius:0 3px 3px 0;min-width:3px;flex:none}
+  .fval{font-size:14px;font-weight:650;margin-left:11px;font-variant-numeric:tabular-nums;
+        white-space:nowrap}
+  .fmeta{font-size:12.5px;color:var(--ink-3);margin-left:9px;font-weight:400;white-space:nowrap}
+  .fstep .flbl{font-size:13px;color:var(--ink-2);text-align:right}
+
+  /* ---------- explorer ---------- */
+  .tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+  input[type=search]{flex:1;min-width:220px;padding:9px 12px;border:1px solid var(--rule);
+    border-radius:3px;background:var(--surface);color:var(--ink);font-family:var(--sans);font-size:14px}
+  input[type=search]:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  .chip{padding:6px 11px;border:1px solid var(--rule);background:var(--surface);
+        color:var(--ink-2);border-radius:99px;font-size:12.5px;cursor:pointer;font-family:var(--sans)}
+  .chip[aria-pressed=true]{background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-weight:600}
+
+  .clist{border:1px solid var(--rule);border-radius:3px;overflow:hidden;background:var(--surface)}
+  .crow{display:grid;grid-template-columns:1fr 118px 96px 88px 72px;gap:10px;align-items:center;
+        padding:11px 16px;border-bottom:1px solid var(--hair);cursor:pointer;font-size:13.5px}
+  .crow:last-child{border-bottom:0}
+  .crow:hover{background:var(--surface-2)}
+  .crow .nm{font-weight:550;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .crow .ph{color:var(--ink-3);font-variant-numeric:tabular-nums;font-size:12.5px}
+  .crow .num{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2)}
+  .pill{font-size:11px;padding:2px 8px;border-radius:99px;background:var(--surface-2);
+        color:var(--ink-2);white-space:nowrap;text-align:center;border:1px solid var(--hair)}
+  .pill.mem{background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-weight:600}
+
+  .tl{padding:6px 16px 20px 16px;background:var(--surface-2);border-bottom:1px solid var(--hair)}
+  .tlitem{display:grid;grid-template-columns:92px 16px 1fr;gap:10px;align-items:start;
+          padding:7px 0;font-size:13px}
+  .tldate{color:var(--ink-3);font-variant-numeric:tabular-nums;font-size:12.5px;text-align:right;padding-top:1px}
+  .tlmark{display:flex;justify-content:center;padding-top:5px;position:relative}
+  .tlmark i{width:9px;height:9px;border-radius:50%;display:block;box-shadow:0 0 0 2px var(--surface-2)}
+  .tlmark::before{content:"";position:absolute;top:0;bottom:-14px;width:1px;background:var(--rule)}
+  .tlitem:last-child .tlmark::before{display:none}
+  .tlbody strong{font-weight:600}
+  .tlbody em{font-style:normal;color:var(--ink-2)}
+  .tlbody .out{color:var(--ink-3);font-size:12.5px}
+
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--hair)}
+  th{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+  td.n{text-align:right;font-variant-numeric:tabular-nums}
+  .tblwrap{overflow-x:auto;margin-top:14px;border-top:1px solid var(--hair);padding-top:6px}
+  details>summary{cursor:pointer;font-size:12.5px;color:var(--ink-2);padding:6px 0;list-style:none}
+  details>summary::-webkit-details-marker{display:none}
+  details>summary::before{content:"▸ ";color:var(--ink-3)}
+  details[open]>summary::before{content:"▾ "}
+
+  .notes{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media(max-width:820px){.notes{grid-template-columns:1fr}}
+  .note{background:var(--surface);border:1px solid var(--rule);border-radius:3px;padding:20px 22px}
+  .note h4{margin:0 0 10px;font-size:14.5px;font-weight:600}
+  .note ul{margin:0;padding-left:17px;color:var(--ink-2);font-size:13.5px}
+  .note li{margin-bottom:7px}
+  .note li:last-child{margin-bottom:0}
+  code{font-family:ui-monospace,"Cascadia Code",Consolas,monospace;font-size:12.5px;
+       background:var(--surface-2);padding:1px 5px;border-radius:2px}
+  .empty{padding:26px;text-align:center;color:var(--ink-3);font-size:13.5px}
+
+  /* ---------- unlock gate ---------- */
+  .gate{position:fixed;inset:0;background:var(--ground);display:flex;
+        align-items:center;justify-content:center;padding:24px;z-index:50}
+  .gatebox{background:var(--surface);border:1px solid var(--rule);border-radius:4px;
+           padding:34px 32px;max-width:400px;width:100%;display:flex;flex-direction:column}
+  .gatebox h2{margin:0 0 10px}
+  .gsub{margin:0 0 20px;color:var(--ink-2);font-size:14px}
+  .gatebox input{padding:10px 12px;border:1px solid var(--rule);border-radius:3px;
+                 background:var(--ground);color:var(--ink);font-size:15px;font-family:var(--sans)}
+  .gatebox button{margin-top:12px;padding:10px 14px;border:0;border-radius:3px;
+                  background:var(--accent);color:var(--on-accent);font-weight:600;
+                  font-size:14px;cursor:pointer;font-family:var(--sans)}
+  .gatebox button:disabled{opacity:.6;cursor:default}
+  .gerr{margin:12px 0 0;color:var(--crit);font-size:13px}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div id="loading" class="wrap" style="padding-top:80px">
+  <p class="eyebrow">Style Lounge &middot; Customer Intelligence</p>
+  <h2>Reading the latest data&hellip;</h2>
+  <p class="sub">Pulling registrations, bookings, nudges and memberships
+     from the four live sheets.</p>
+</div>
+<div class="wrap" hidden>
+
+<header class="mast">
+  <p class="eyebrow">Style Lounge · Customer Intelligence</p>
+  <h1>The customer lifecycle, end to end</h1>
+  <p>Every registration, booking, nudge and membership from four working spreadsheets,
+     joined on the customer's phone number into one timeline per person.</p>
+  <p class="stamp"><span id="st-cust"></span><span class="dot"></span>
+     <span id="st-ev"></span><span class="dot"></span>
+     <span>Sources: WA Marketing · CRM Style Lounge · Rupam Membership · Membership Tracker</span>
+     <span class="dot"></span><span id="st-date"></span></p>
+</header>
+
+<section>
+  <h2>Where the business stands</h2>
+  <p class="sub">Counts are de-duplicated across all four workbooks. Revenue counts completed bookings only.</p>
+  <div class="kpis" id="kpis"></div>
+</section>
+
+<section>
+  <h2>What the data says about nudging</h2>
+  <p class="sub">The headline result. A nudge is credited when the customer books at any point
+     after it — a generous rule that favours the channel, so these are upper bounds.</p>
+  <div id="findings"></div>
+  <div class="two">
+    <div class="chart">
+      <h4>WhatsApp nudges → booking within 14 days</h4>
+      <p class="cap">By the campaign list each nudge came from.</p>
+      <div id="wacat"></div>
+      <div class="tblwrap"><details><summary>Table view</summary><table id="wacat-t"></table></details></div>
+    </div>
+    <div class="chart">
+      <h4>Booking rate after a nudge, by channel</h4>
+      <p class="cap">Share of nudges followed by a booking inside each window.</p>
+      <div id="attr"></div>
+      <div class="legend">
+        <span class="lg"><span class="sw" style="background:var(--s1)"></span>within 7 days</span>
+        <span class="lg"><span class="sw" style="background:var(--s2)"></span>within 14 days</span>
+        <span class="lg"><span class="sw" style="background:var(--s3)"></span>within 30 days</span>
+      </div>
+      <div class="tblwrap"><details><summary>Table view</summary><table id="attr-t"></table></details></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>The funnel</h2>
+  <p class="sub">Each step is a subset of the one above it. The percentage on the right is
+     the share of the previous step that survives — that is where the leak is.</p>
+  <div class="chart">
+    <div class="fn" id="funnel"></div>
+    <div class="tblwrap"><details><summary>Table view</summary><table id="funnel-t"></table></details></div>
+  </div>
+</section>
+
+<section>
+  <h2>Who gets contacted</h2>
+  <p class="sub">Outreach reaches a small, mostly-already-active slice of the base. The rest
+     of the file has never been touched by any channel.</p>
+  <div class="two">
+    <div class="chart">
+      <h4>Channel coverage</h4>
+      <p class="cap">Customers reached at least once, of <span id="cov-tot"></span> total.</p>
+      <div id="cov"></div>
+    </div>
+    <div class="chart">
+      <h4>Lifecycle stage</h4>
+      <p class="cap">Every customer sits in exactly one stage.</p>
+      <div id="stages"></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Membership</h2>
+  <p class="sub">The membership programme runs largely outside the app: most members were
+     never on a nudge list, and nearly half have no app registration at all.</p>
+  <div class="two">
+    <div class="chart"><h4>Membership pipeline</h4><p class="cap">Nudge list vs. actual members.</p>
+      <div id="mem"></div></div>
+    <div class="chart"><h4>Membership call outcomes</h4><p class="cap">Logged result of each membership call.</p>
+      <div id="memout"></div></div>
+  </div>
+</section>
+
+<section>
+  <h2>Customer timelines</h2>
+  <p class="sub">Every customer with any booking, nudge or membership — searchable by name or
+     phone. Click a row to open their full history across all four sheets.</p>
+  <div class="tools">
+    <input type="search" id="q" placeholder="Search name or phone number…" aria-label="Search customers">
+    <button class="chip" data-f="all" aria-pressed="true">All</button>
+    <button class="chip" data-f="member" aria-pressed="false">Members</button>
+    <button class="chip" data-f="loyal" aria-pressed="false">3+ bookings</button>
+    <button class="chip" data-f="nudged" aria-pressed="false">Nudged, never booked</button>
+  </div>
+  <div class="clist" id="clist"></div>
+  <p class="cap" id="lmore" style="margin-top:10px;color:var(--ink-3);font-size:12.5px"></p>
+</section>
+
+<section>
+  <h2>Reading this dashboard</h2>
+  <div class="notes">
+    <div class="note">
+      <h4>How the join works</h4>
+      <ul>
+        <li>Phone is the only usable key — <code>Customer ID</code> is empty for all 13,809 CRM follow-up rows.</li>
+        <li>Numbers arrive as integers, floats (<code>9971372011.0</code>) and text (<code>'9310311589</code>). All are normalised to 10 digits, stripping <code>+91</code>.</li>
+        <li>Validated against the WA Marketing tabs: 333/333, 214/214 and 510/510 phones matched exactly.</li>
+      </ul>
+    </div>
+    <div class="note">
+      <h4>Data issues worth fixing</h4>
+      <ul>
+        <li><strong>3,560 CRM registrations</strong> have the phone column formatted as a date. Excel exports read them as blank; reading raw values recovers 707 extra customers.</li>
+        <li><strong>47 of 106 members</strong> have no registration record — they were signed up at the salon, never in the app.</li>
+        <li>The CRM sheet adds a new <code>Remarks DD-MM-YYYY</code> column pair every day; it is 44 columns wide and growing.</li>
+        <li>The <code>N Time Users</code> tabs are snapshots and have drifted from live bookings.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<script>
+let D;
+const $ = s => document.querySelector(s);
+function renderAll(){
+const fmt = n => n.toLocaleString('en-IN');
+const inr = n => '₹' + Math.round(n).toLocaleString('en-IN');
+const pct = n => n.toFixed(1) + '%';
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- masthead ---------- */
+$('#st-cust').textContent = fmt(D.totals.customers) + ' customers';
+$('#st-ev').textContent = fmt(D.totals.events) + ' lifecycle events';
+$('#st-date').textContent = 'Data as of ' + D.generated;
+
+/* ---------- kpis ---------- */
+const T = D.totals;
+$('#kpis').innerHTML = [
+  ['Registered', fmt(T.registered), 'in the app'],
+  ['Have booked', fmt(T.bookers), pct(100*T.bookers/T.registered) + ' of registered'],
+  ['Members', fmt(T.members), pct(100*T.members/T.bookers) + ' of bookers'],
+  ['Revenue', inr(T.revenue), 'completed bookings'],
+  ['At risk', fmt(T.at_risk), 'silent > 25 days'],
+  ['Never contacted', fmt(D.coverage.never_touched), pct(100*D.coverage.never_touched/T.customers) + ' of base'],
+].map(([k,v,n]) => `<div class="kpi"><div class="k">${k}</div><div class="v">${v}</div><div class="n">${n}</div></div>`).join('');
+
+/* ---------- findings ---------- */
+const cold = D.wa_by_category.find(r => r.cat === 'Never Booked');
+const best = D.wa_by_category[0];
+const warmRest = D.wa_by_category.filter(r => r !== best && r.cat !== 'Never Booked');
+const restRate = warmRest.reduce((a, r) => a + r.booked, 0) / warmRest.reduce((a, r) => a + r.n, 0) * 100;
+$('#findings').innerHTML = `
+  <div class="finding">
+    <h3><span class="badge">Not working</span> Cold WhatsApp activation converts nobody</h3>
+    <p>All <strong>${cold.n}</strong> nudges sent to the “Never Booked” list produced
+       <strong>zero</strong> bookings. Every person on that list was genuinely cold — none had
+       booked before — so this is the one clean test of whether WhatsApp can create a first
+       booking, and the answer is no. Either the offer or the channel is wrong for activation.</p>
+  </div>
+  <div class="finding pos">
+    <h3><span class="badge good">Working</span> Reactivating your most loyal customers is the best outreach you have</h3>
+    <p>The “${best.cat}” list books at <strong>${pct(best.rate)}</strong> within 14 days, against
+       ${pct(restRate)} for the 1st- and 2nd-time lists — roughly
+       <strong>${(best.rate / restRate).toFixed(1)}×</strong> better. Nudging works, but only on
+       customers who already have the habit. All of this list had booked before, so this measures
+       <em>reactivation</em>, not acquisition.</p>
+  </div>
+  <div class="finding" style="border-left-color:var(--warn)">
+    <h3><span class="badge" style="background:var(--warn);color:#1a1a19">Read with care</span> The headline “nudged customers book 21.5% vs 0.87%” is selection bias</h3>
+    <p>Roughly three quarters of all nudges are sent to people who had <em>already booked</em>, because the
+       lists are built from booking history. Comparing them to the never-nudged base measures who was
+       chosen, not what the nudge did. Only the “Never Booked” list is a clean test — and it returned 0%.</p>
+  </div>`;
+
+/* ---------- WA by category ---------- */
+(() => {
+  const rows = D.wa_by_category, mx = Math.max(...rows.map(r => r.rate), 1);
+  $('#wacat').innerHTML = rows.map(r => `
+    <div class="row" title="${esc(r.cat)}: ${r.booked} of ${r.n} nudges followed by a booking">
+      <div class="lbl">${esc(r.cat)}</div>
+      <div class="track"><div class="bar" style="width:${Math.max(r.rate/mx*100,0.6)}%;
+        background:${r.rate === 0 ? 'var(--crit)' : 'var(--s1)'}"></div></div>
+      <div class="val">${pct(r.rate)}</div></div>`).join('');
+  $('#wacat-t').innerHTML = '<tr><th>List</th><th class="n">Nudges</th><th class="n">Booked ≤14d</th><th class="n">Rate</th><th class="n">Already booked</th></tr>'
+    + rows.map(r => `<tr><td>${esc(r.cat)}</td><td class="n">${r.n}</td><td class="n">${r.booked}</td><td class="n">${pct(r.rate)}</td><td class="n">${pct(r.warm)}</td></tr>`).join('');
+})();
+
+/* ---------- attribution ---------- */
+(() => {
+  const rows = D.attribution, mx = Math.max(...rows.flatMap(r => [r.r7, r.r14, r.r30]), 1);
+  const cols = [['r7','var(--s1)'],['r14','var(--s2)'],['r30','var(--s3)']];
+  $('#attr').innerHTML = rows.map(r => `
+    <div class="grp"><div class="lbl" style="font-size:13px;color:var(--ink-2);text-align:right">${esc(r.channel)}</div>
+      <div class="gbars">${cols.map(([k,c]) => `
+        <div class="gwrap"><div class="gbar" style="width:${Math.max(r[k]/mx*100,0.5)}%;background:${c}"></div>
+        <span>${pct(r[k])}</span></div>`).join('')}</div></div>`).join('');
+  $('#attr-t').innerHTML = '<tr><th>Channel</th><th class="n">Nudges</th><th class="n">People</th><th class="n">≤7d</th><th class="n">≤14d</th><th class="n">≤30d</th></tr>'
+    + rows.map(r => `<tr><td>${esc(r.channel)}</td><td class="n">${r.nudges}</td><td class="n">${r.uniq}</td><td class="n">${pct(r.r7)}</td><td class="n">${pct(r.r14)}</td><td class="n">${pct(r.r30)}</td></tr>`).join('');
+})();
+
+/* ---------- funnel ---------- */
+(() => {
+  const f = D.funnel, top = f[0].value;
+  const ramp = ['var(--ramp1)','var(--ramp2)','var(--ramp3)','var(--ramp4)','var(--ramp5)'];
+  $('#funnel').innerHTML = f.map((s,i) => {
+    /* cap the widest bar at 66% of the row so the value + note always fit */
+    const w = Math.max(s.value/top*66, 0.3);
+    const prev = i ? pct(100*s.value/f[i-1].value) + ' of previous' : '100% — the base';
+    return `<div class="fstep"><div class="flbl">${esc(s.label)}</div>
+      <div style="display:flex;align-items:center;min-width:0">
+        <div class="fbar" style="width:${w}%;background:${ramp[i]}"></div>
+        <span class="fval">${fmt(s.value)}</span>
+        <span class="fmeta">${prev}</span></div></div>`;
+  }).join('');
+  $('#funnel-t').innerHTML = '<tr><th>Stage</th><th class="n">Customers</th><th class="n">Of registered</th><th class="n">Of previous</th></tr>'
+    + f.map((s,i) => `<tr><td>${esc(s.label)}</td><td class="n">${fmt(s.value)}</td><td class="n">${pct(100*s.value/top)}</td><td class="n">${i ? pct(100*s.value/f[i-1].value) : '—'}</td></tr>`).join('');
+})();
+
+/* ---------- simple bar helper ---------- */
+function bars(el, data, opt = {}) {
+  const mx = Math.max(...data.map(d => d[1]), 1);
+  el.innerHTML = data.map(d => `
+    <div class="row" title="${esc(d[0])}: ${fmt(d[1])}">
+      <div class="lbl">${esc(d[0])}</div>
+      <div class="track"><div class="bar" style="width:${Math.max(d[1]/mx*100,0.6)}%;background:${opt.color||'var(--s1)'}"></div></div>
+      <div class="val">${opt.pctOf ? pct(100*d[1]/opt.pctOf) : fmt(d[1])}</div></div>`).join('');
+}
+
+const C = D.coverage;
+$('#cov-tot').textContent = fmt(C.total);
+bars($('#cov'), [['WhatsApp', C.wa], ['Membership call', C.mem], ['CRM call', C.call],
+                 ['More than one', C.multi], ['Never contacted', C.never_touched]], {color:'var(--s1)'});
+bars($('#stages'), Object.entries(D.stages).map(([k,v]) => [k.replace(/^\d+\.\s*/,''), v]), {color:'var(--s3)'});
+bars($('#mem'), [['Nudged for membership', D.membership.nudged], ['…of those, joined', D.membership.converted],
+                 ['Members never nudged', D.membership.never_nudged], ['Members not registered', D.membership.unregistered]],
+     {color:'var(--s2)'});
+bars($('#memout'), Object.entries(D.mem_outcomes), {color:'var(--s2)'});
+
+/* ---------- explorer ---------- */
+const LABEL = {registration:'Registered', booking:'Booking', nudge_whatsapp:'WhatsApp nudge',
+               nudge_call:'CRM call', nudge_membership:'Membership call', membership_start:'Membership started'};
+const COLOR = {registration:'var(--ink-3)', booking:'var(--s3)', nudge_whatsapp:'var(--s1)',
+               nudge_call:'var(--s2)', nudge_membership:'var(--accent)', membership_start:'var(--brass)'};
+let filter = 'all', query = '', open = null;
+const LIMIT = 120;
+
+function match(c) {
+  if (filter === 'member' && !c.member) return false;
+  if (filter === 'loyal' && c.bookings < 3) return false;
+  if (filter === 'nudged' && !(c.bookings === 0 && c.nudges > 0)) return false;
+  if (!query) return true;
+  return (c.name || '').toLowerCase().includes(query) || c.phone.includes(query);
+}
+
+function timeline(c) {
+  return `<div class="tl">` + c.events.map(e => `
+    <div class="tlitem">
+      <div class="tldate">${e.d || '—'}</div>
+      <div class="tlmark"><i style="background:${COLOR[e.t] || 'var(--ink-3)'}"></i></div>
+      <div class="tlbody"><strong>${LABEL[e.t] || e.t}</strong>
+        ${e.o ? ` <em>· ${esc(e.o)}</em>` : ''}
+        ${e.det ? `<div class="out">${esc(e.det)}</div>` : ''}</div>
+    </div>`).join('') + `</div>`;
+}
+
+function render() {
+  const hits = D.timelines.filter(match);
+  const show = hits.slice(0, LIMIT);
+  $('#clist').innerHTML = show.length ? show.map(c => `
+    <div class="crow" data-p="${c.phone}">
+      <div class="nm">${esc(c.name)}</div>
+      <div class="ph">${c.phone}</div>
+      <div class="pill${c.member ? ' mem' : ''}">${esc(c.stage.replace(/^\d+\.\s*/,''))}</div>
+      <div class="num">${c.bookings} booking${c.bookings === 1 ? '' : 's'}</div>
+      <div class="num">${c.revenue ? inr(c.revenue) : '—'}</div>
+    </div>${open === c.phone ? timeline(c) : ''}`).join('')
+    : `<div class="empty">No customer matches “${esc(query)}”.</div>`;
+  $('#lmore').textContent = hits.length > LIMIT
+    ? `Showing ${LIMIT} of ${fmt(hits.length)} matching customers — refine the search to narrow it down.`
+    : (hits.length ? `${fmt(hits.length)} customer${hits.length === 1 ? '' : 's'}.` : '');
+  document.querySelectorAll('.crow').forEach(r => r.addEventListener('click', () => {
+    open = open === r.dataset.p ? null : r.dataset.p; render();
+  }));
+}
+$('#q').addEventListener('input', e => { query = e.target.value.trim().toLowerCase(); open = null; render(); });
+document.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  filter = b.dataset.f; open = null; render();
+}));
+render();
+}  /* end renderAll */
+
+/* ---------- boot: fetch the payload from the authenticated API ---------- */
+(async function boot(){
+  const load = document.getElementById('loading');
+  try {
+    const res = await fetch('/api/data', {cache:'no-store'});
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    D = await res.json();
+    if (D && D.error) throw new Error(D.detail || D.error);
+  } catch (err) {
+    load.innerHTML =
+      '<h2>Could not load the data</h2>' +
+      '<p class="sub">' + String(err.message || err).replace(/[<>&]/g,'') + '</p>' +
+      '<p class="sub">If this is the first load after a deploy, the four sheets ' +
+      'are still being read - that takes about half a minute. Refresh shortly.</p>';
+    return;
+  }
+  load.remove();
+  document.querySelector('.wrap').hidden = false;
+  renderAll();
+})();
+</script>
+
+</body>
+</html>
