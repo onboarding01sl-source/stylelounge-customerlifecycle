@@ -89,6 +89,21 @@ for path, authz, want_code, want_kind, label in CASES:
     fails += not ok
     print('%-14s %-22s %-6s %-6s %s' % (path, label, code, kind, 'ok' if ok else 'FAIL'))
 
+# Vercel rewrites the path to /api/index and carries intent in ?route=.
+# These are the requests the deployed function actually receives.
+print()
+print('--- as Vercel rewrites them ---')
+for url, want, label in [
+    ('/api/index?route=data', 'json', 'rewritten /api/data'),
+    ('/api/index?route=refresh', 'json', 'rewritten /api/refresh'),
+    ('/api/index?route=page', 'html', 'rewritten page'),
+]:
+    code, ctype, body = request(url, GOOD)
+    kind = 'json' if 'json' in ctype else ('html' if 'html' in ctype else 'other')
+    ok = kind == want
+    fails += not ok
+    print('%-28s %-6s %-6s %s' % (label, code, kind, 'ok' if ok else 'FAIL'))
+
 # the JSON routes must return JSON, never the HTML page - the deployed bug
 code, ctype, body = request('/api/data', GOOD)
 is_html = body.lstrip().startswith('<!doctype')

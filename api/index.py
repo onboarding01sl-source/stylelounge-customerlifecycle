@@ -20,7 +20,7 @@ import sys
 import time
 import traceback
 from http.server import BaseHTTPRequestHandler
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -96,19 +96,40 @@ class handler(BaseHTTPRequestHandler):
                              'error': type(exc).__name__, 'detail': str(exc)[:400]})
 
     # ------------------------------------------------------------------ entry
+    def _route(self):
+        """Which handler this request wants.
+
+        A Vercel rewrite replaces the path the function sees - every request
+        arrives as /api/index - so the path alone cannot be trusted. The
+        rewrites carry the intent in ?route=, which survives intact. The path
+        check stays as a fallback for local runs and for a deployment with no
+        rewrites configured.
+        """
+        parts = urlparse(self.path)
+        params = parse_qs(parts.query)
+        route = (params.get('route') or [None])[0]
+        if route in ('data', 'refresh', 'page'):
+            return route
+        path = parts.path.rstrip('/') or '/'
+        if path == '/api/data':
+            return 'data'
+        if path == '/api/refresh':
+            return 'refresh'
+        return 'page'
+
     def do_GET(self):                                  # noqa: N802
-        path = urlparse(self.path).path.rstrip('/') or '/'
+        route = self._route()
 
         # the scheduler calls /api/refresh with CRON_SECRET rather than a password
-        if path == '/api/refresh' and auth.is_cron(self):
+        if route == 'refresh' and auth.is_cron(self):
             return self._refresh()
 
         if not auth.require(self):
             return
 
-        if path == '/api/data':
+        if route == 'data':
             return self._data()
-        if path == '/api/refresh':
+        if route == 'refresh':
             return self._refresh()
         return self._page()
 
