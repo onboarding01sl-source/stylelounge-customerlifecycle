@@ -7,38 +7,59 @@
 <meta name="referrer" content="no-referrer">
 <title>Style Lounge — Customer Lifecycle</title>
 <style>
+  /* Style Lounge design system - the faces and values are lifted from
+     stylelounge.ai so the dashboard reads as part of the same product.
+     The font files are served from the site's own Webflow CDN, which sets
+     Access-Control-Allow-Origin: *, so they load cross-origin from here. */
+  @font-face{font-family:"Freight Disp Pro";font-weight:400;font-style:normal;font-display:swap;
+    src:url("https://cdn.prod.website-files.com/69d27aeda64eb3b39891e64a/69d5be7958afd5ffb921d233_FreightDispProSemibold-Regular.ttf") format("truetype")}
+  @font-face{font-family:"Neuehaasgrottext";font-weight:400;font-style:normal;font-display:swap;
+    src:url("https://cdn.prod.website-files.com/69d27aeda64eb3b39891e64a/69d27aeda64eb3b39891e68a_NeueHaasGrotText-55Roman-Trial.otf") format("opentype")}
+  @font-face{font-family:"Neuehaasgrottext";font-weight:500;font-style:normal;font-display:swap;
+    src:url("https://cdn.prod.website-files.com/69d27aeda64eb3b39891e64a/69d27aeda64eb3b39891e687_NeueHaasGrotText-65Medium-Trial.otf") format("opentype")}
+  @font-face{font-family:"Neuehaasgrottext";font-weight:700;font-style:normal;font-display:swap;
+    src:url("https://cdn.prod.website-files.com/69d27aeda64eb3b39891e64a/69d27aeda64eb3b39891e689_NeueHaasGrotText-75Bold-Trial.otf") format("opentype")}
+
   :root{
     color-scheme:light;
-    --ground:#f7f4f1; --surface:#fffdfb; --surface-2:#f2ede9;
-    --ink:#241d29; --ink-2:#6c6270; --ink-3:#948a99;
-    --rule:#e3dcd6; --hair:#efe9e4;
-    --accent:#7b3f6b; --accent-soft:#f0e4ee; --brass:#a8763c; --on-accent:#fff;
+    /* warm neutrals and near-black, straight off the marketing site */
+    --ground:#faf9f7; --surface:#ffffff; --surface-2:#f4f2ed;
+    --ink:#181818; --ink-2:#6b6459; --ink-3:#948d80;
+    --rule:#e4e0d7; --hair:#efece5;
+    --accent:#49252f; --accent-soft:#f3ebe9; --brass:#857860; --on-accent:#fff;
+    --cream:#e7d4bb; --greige:#cfc9bd;
+    /* multi-series charts keep the CVD-validated palette: those colours carry
+       identity, and brand warmth cannot separate three series safely */
     --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a;
     --good:#0ca30c; --warn:#fab219; --crit:#d03b3b;
-    --ramp1:#86b6ef; --ramp2:#5598e7; --ramp3:#3987e5; --ramp4:#256abf; --ramp5:#184f95;
-    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
-    --sans:system-ui,-apple-system,"Segoe UI",sans-serif;
+    /* single-hue ordinal ramp derived from the brand wine */
+    --ramp1:#d7b3b8; --ramp2:#b3878e; --ramp3:#8f6069; --ramp4:#6b4049; --ramp5:#49252f;
+    --serif:"Freight Disp Pro",Georgia,"Times New Roman",serif;
+    --sans:"Neuehaasgrottext","Helvetica Neue",Helvetica,Arial,sans-serif;
+    --pill:999px;
   }
   @media (prefers-color-scheme:dark){
     :root:where(:not([data-theme="light"])){
       color-scheme:dark;
-      --ground:#16131a; --surface:#1e1a23; --surface-2:#272130;
-      --ink:#f5f1f4; --ink-2:#b4a9b8; --ink-3:#8b8092;
-      --rule:#332c3b; --hair:#2a2432;
-      --accent:#c88bb6; --accent-soft:#33253060; --brass:#c99a5e; --on-accent:#1e1a23;
+      --ground:#111110; --surface:#1a1a18; --surface-2:#242320;
+      --ink:#f6f4ef; --ink-2:#b3ac9f; --ink-3:#8a8478;
+      --rule:#302e2a; --hair:#262521;
+      --accent:#d9a9ae; --accent-soft:#2a1e21; --brass:#b9a985; --on-accent:#1a1a18;
+      --cream:#e7d4bb; --greige:#cfc9bd;
       --s1:#3987e5; --s2:#d95926; --s3:#199e70;
       --good:#0ca30c; --warn:#fab219; --crit:#d03b3b;
-      --ramp1:#184f95; --ramp2:#256abf; --ramp3:#2a78d6; --ramp4:#3987e5; --ramp5:#5598e7;
+      --ramp1:#5c3038; --ramp2:#7d4650; --ramp3:#9e5f6a; --ramp4:#bd8189; --ramp5:#d9a9ae;
     }
   }
   :root[data-theme="dark"]{
     color-scheme:dark;
-    --ground:#16131a; --surface:#1e1a23; --surface-2:#272130;
-    --ink:#f5f1f4; --ink-2:#b4a9b8; --ink-3:#8b8092;
-    --rule:#332c3b; --hair:#2a2432;
-    --accent:#c88bb6; --accent-soft:#33253060; --brass:#c99a5e; --on-accent:#1e1a23;
+    --ground:#111110; --surface:#1a1a18; --surface-2:#242320;
+    --ink:#f6f4ef; --ink-2:#b3ac9f; --ink-3:#8a8478;
+    --rule:#302e2a; --hair:#262521;
+    --accent:#d9a9ae; --accent-soft:#2a1e21; --brass:#b9a985; --on-accent:#1a1a18;
+    --cream:#e7d4bb; --greige:#cfc9bd;
     --s1:#3987e5; --s2:#d95926; --s3:#199e70;
-    --ramp1:#184f95; --ramp2:#256abf; --ramp3:#2a78d6; --ramp4:#3987e5; --ramp5:#5598e7;
+    --ramp1:#5c3038; --ramp2:#7d4650; --ramp3:#9e5f6a; --ramp4:#bd8189; --ramp5:#d9a9ae;
   }
 
   *{box-sizing:border-box}
@@ -51,8 +72,8 @@
   .mast{padding:56px 0 28px;border-bottom:1px solid var(--rule)}
   .eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;
            color:var(--brass);font-weight:600;margin:0 0 14px}
-  .mast h1{font-family:var(--serif);font-weight:400;font-size:clamp(34px,5vw,52px);
-           line-height:1.06;margin:0 0 14px;letter-spacing:-.01em;text-wrap:balance}
+  .mast h1{font-family:var(--serif);font-weight:400;font-size:clamp(38px,5.5vw,60px);
+           line-height:1.04;margin:0 0 16px;letter-spacing:-.005em;text-wrap:balance}
   .mast p{margin:0;max-width:64ch;color:var(--ink-2);font-size:16px}
   .stamp{margin-top:18px;font-size:12.5px;color:var(--ink-3);display:flex;
          gap:8px;flex-wrap:wrap;align-items:center}
@@ -61,12 +82,12 @@
   /* ---------- bands ---------- */
   section{padding:44px 0;border-bottom:1px solid var(--hair)}
   section:last-of-type{border-bottom:0}
-  h2{font-family:var(--serif);font-weight:400;font-size:27px;margin:0 0 6px;letter-spacing:-.01em}
+  h2{font-family:var(--serif);font-weight:400;font-size:32px;margin:0 0 8px;letter-spacing:-.005em}
   .sub{color:var(--ink-2);margin:0 0 26px;max-width:70ch;font-size:14.5px}
 
   /* ---------- kpi ---------- */
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:10px}
-  .kpi{background:var(--surface);border:1px solid var(--rule);border-radius:3px;padding:18px 18px 16px}
+  .kpi{background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:20px 20px 18px}
   .kpi .k{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);
           font-weight:600;margin-bottom:7px}
   .kpi .v{font-size:31px;line-height:1;font-weight:550;letter-spacing:-.02em}
@@ -74,30 +95,30 @@
 
   /* ---------- finding ---------- */
   .finding{background:var(--surface);border:1px solid var(--rule);
-           border-left:3px solid var(--crit);border-radius:3px;padding:22px 24px;margin-bottom:26px}
+           border-left:3px solid var(--crit);border-radius:16px;padding:24px 26px;margin-bottom:26px}
   .finding.pos{border-left-color:var(--good)}
   .finding h3{margin:0 0 8px;font-size:16.5px;font-weight:600;display:flex;
               align-items:center;gap:9px}
   .finding p{margin:0;color:var(--ink-2);font-size:14.5px;max-width:72ch}
-  .badge{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;
-         padding:3px 7px;border-radius:2px;color:#fff;background:var(--crit)}
+  .badge{font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;
+         padding:4px 10px;border-radius:var(--pill);color:#fff;background:var(--crit)}
   .badge.good{background:var(--good)}
 
   /* ---------- bars ---------- */
-  .chart{background:var(--surface);border:1px solid var(--rule);border-radius:3px;padding:22px 24px}
+  .chart{background:var(--surface);border:1px solid var(--rule);border-radius:16px;padding:24px 26px}
   .chart h4{margin:0 0 3px;font-size:14.5px;font-weight:600}
   .chart .cap{margin:0 0 20px;font-size:12.5px;color:var(--ink-3)}
   .row{display:grid;grid-template-columns:132px 1fr 74px;align-items:center;
        gap:12px;margin-bottom:9px}
   .row .lbl{font-size:13px;color:var(--ink-2);text-align:right}
-  .track{background:var(--surface-2);border-radius:2px;height:22px;position:relative;overflow:visible}
-  .bar{height:22px;border-radius:0 3px 3px 0;transition:opacity .12s;position:relative}
+  .track{background:var(--surface-2);border-radius:var(--pill);height:22px;position:relative;overflow:visible}
+  .bar{height:22px;border-radius:0 11px 11px 0;transition:opacity .12s;position:relative}
   .row .val{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
   .row:hover .bar{opacity:.82}
 
   .grp{display:grid;grid-template-columns:132px 1fr;gap:12px;align-items:center;margin-bottom:14px}
   .gbars{display:flex;flex-direction:column;gap:2px}
-  .gbar{height:13px;border-radius:0 2px 2px 0;min-width:1px}
+  .gbar{height:13px;border-radius:0 7px 7px 0;min-width:1px}
   .gwrap{display:flex;align-items:center;gap:8px}
   .gwrap span{font-size:11.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
 
@@ -112,7 +133,7 @@
   /* ---------- funnel ---------- */
   .fn{display:flex;flex-direction:column;gap:2px}
   .fstep{display:grid;grid-template-columns:118px 1fr;gap:14px;align-items:center}
-  .fbar{height:38px;border-radius:0 3px 3px 0;min-width:3px;flex:none}
+  .fbar{height:38px;border-radius:0 19px 19px 0;min-width:3px;flex:none}
   .fval{font-size:14px;font-weight:650;margin-left:11px;font-variant-numeric:tabular-nums;
         white-space:nowrap}
   .fmeta{font-size:12.5px;color:var(--ink-3);margin-left:9px;font-weight:400;white-space:nowrap}
@@ -120,14 +141,17 @@
 
   /* ---------- explorer ---------- */
   .tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
-  input[type=search]{flex:1;min-width:220px;padding:9px 12px;border:1px solid var(--rule);
-    border-radius:3px;background:var(--surface);color:var(--ink);font-family:var(--sans);font-size:14px}
+  input[type=search]{flex:1;min-width:220px;padding:11px 18px;border:1px solid var(--rule);
+    border-radius:var(--pill);background:var(--surface);color:var(--ink);
+    font-family:var(--sans);font-size:14px}
   input[type=search]:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-  .chip{padding:6px 11px;border:1px solid var(--rule);background:var(--surface);
-        color:var(--ink-2);border-radius:99px;font-size:12.5px;cursor:pointer;font-family:var(--sans)}
+  .chip{padding:9px 18px;border:1px solid var(--rule);background:var(--surface);
+        color:var(--ink-2);border-radius:var(--pill);font-size:13px;cursor:pointer;
+        font-family:var(--sans);font-weight:500;transition:background .12s,color .12s}
+  .chip:hover{background:var(--surface-2)}
   .chip[aria-pressed=true]{background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-weight:600}
 
-  .clist{border:1px solid var(--rule);border-radius:3px;overflow:hidden;background:var(--surface)}
+  .clist{border:1px solid var(--rule);border-radius:16px;overflow:hidden;background:var(--surface)}
   .crow{display:grid;grid-template-columns:1fr 118px 96px 88px 72px;gap:10px;align-items:center;
         padding:11px 16px;border-bottom:1px solid var(--hair);cursor:pointer;font-size:13.5px}
   .crow:last-child{border-bottom:0}
@@ -163,7 +187,7 @@
 
   .notes{display:grid;grid-template-columns:1fr 1fr;gap:20px}
   @media(max-width:820px){.notes{grid-template-columns:1fr}}
-  .note{background:var(--surface);border:1px solid var(--rule);border-radius:3px;padding:20px 22px}
+  .note{background:var(--surface);border:1px solid var(--rule);border-radius:16px;padding:22px 24px}
   .note h4{margin:0 0 10px;font-size:14.5px;font-weight:600}
   .note ul{margin:0;padding-left:17px;color:var(--ink-2);font-size:13.5px}
   .note li{margin-bottom:7px}
@@ -382,7 +406,7 @@ $('#findings').innerHTML = `
     <div class="row" title="${esc(r.cat)}: ${r.booked} of ${r.n} nudges followed by a booking">
       <div class="lbl">${esc(r.cat)}</div>
       <div class="track"><div class="bar" style="width:${Math.max(r.rate/mx*100,0.6)}%;
-        background:${r.rate === 0 ? 'var(--crit)' : 'var(--s1)'}"></div></div>
+        background:${r.rate === 0 ? 'var(--crit)' : 'var(--accent)'}"></div></div>
       <div class="val">${pct(r.rate)}</div></div>`).join('');
   $('#wacat-t').innerHTML = '<tr><th>List</th><th class="n">Nudges</th><th class="n">Booked ≤14d</th><th class="n">Rate</th><th class="n">Already booked</th></tr>'
     + rows.map(r => `<tr><td>${esc(r.cat)}</td><td class="n">${r.n}</td><td class="n">${r.booked}</td><td class="n">${pct(r.rate)}</td><td class="n">${pct(r.warm)}</td></tr>`).join('');
@@ -432,12 +456,12 @@ function bars(el, data, opt = {}) {
 const C = D.coverage;
 $('#cov-tot').textContent = fmt(C.total);
 bars($('#cov'), [['WhatsApp', C.wa], ['Membership call', C.mem], ['CRM call', C.call],
-                 ['More than one', C.multi], ['Never contacted', C.never_touched]], {color:'var(--s1)'});
-bars($('#stages'), Object.entries(D.stages).map(([k,v]) => [k.replace(/^\d+\.\s*/,''), v]), {color:'var(--s3)'});
+                 ['More than one', C.multi], ['Never contacted', C.never_touched]], {color:'var(--accent)'});
+bars($('#stages'), Object.entries(D.stages).map(([k,v]) => [k.replace(/^\d+\.\s*/,''), v]), {color:'var(--brass)'});
 bars($('#mem'), [['Nudged for membership', D.membership.nudged], ['…of those, joined', D.membership.converted],
                  ['Members never nudged', D.membership.never_nudged], ['Members not registered', D.membership.unregistered]],
-     {color:'var(--s2)'});
-bars($('#memout'), Object.entries(D.mem_outcomes), {color:'var(--s2)'});
+     {color:'var(--accent)'});
+bars($('#memout'), Object.entries(D.mem_outcomes), {color:'var(--brass)'});
 
 /* ---------- explorer ---------- */
 const LABEL = {registration:'Registered', booking:'Booking', nudge_whatsapp:'WhatsApp nudge',
