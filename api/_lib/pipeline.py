@@ -329,12 +329,37 @@ def build_payload(events, cust, members, today):
                 hit += 1
         return hit
 
+    joined_at = (events[(events.event_type == 'membership_start') & events.date.notna()]
+                 .groupby('phone')['date'].min())
+
+    def people_outcomes(nudges):
+        """Unique people who booked, and who joined, after being contacted."""
+        booked, joined_p = set(), set()
+        first = nudges.groupby('phone')['date'].min()
+        for ph_, dd in zip(nudges['phone'], nudges['date']):
+            arr = bmap.get(ph_)
+            if arr is None:
+                continue
+            delta = (arr - np.datetime64(dd)) / np.timedelta64(1, 'D')
+            after = delta[delta > 0]
+            if len(after) and after.min() <= 14:
+                booked.add(ph_)
+        for ph_, f in first.items():
+            st = joined_at.get(ph_)
+            if st is not None and pd.notna(st) and st >= f:
+                joined_p.add(ph_)
+        return len(booked), len(joined_p)
+
     attribution = []
     for et, label in [('nudge_whatsapp', 'WhatsApp'), ('nudge_call', 'CRM call'),
                       ('nudge_membership', 'Membership call')]:
         nd = events[(events.event_type == et) & events.date.notna()]
         n = len(nd)
-        row = dict(channel=label, nudges=n, uniq=int(nd['phone'].nunique()))
+        uniq = int(nd['phone'].nunique())
+        pb, pj = people_outcomes(nd)
+        row = dict(channel=label, nudges=n, uniq=uniq,
+                   people_booked=pb, people_joined=pj,
+                   person_rate=100.0 * pb / uniq if uniq else 0.0)
         for w in (7, 14, 30):
             h = booked_within(nd, w)
             row['w%d' % w] = h
@@ -455,6 +480,9 @@ def build_team(events, cust, today):
 
     yesterday = today - pd.Timedelta(days=1)
     booked_after = _booking_lookup(events)
+    # when each customer's membership started, for crediting membership sales
+    joined = (events[(events.event_type == 'membership_start') & events.date.notna()]
+              .groupby('phone')['date'].min())
 
     people = []
     for owner, g in calls.groupby('owner'):
@@ -463,8 +491,11 @@ def build_team(events, cust, today):
         low = outcomes.str.lower()
         connected = int(low.isin(CONNECTED).sum())
         noans = int(low.isin(NO_ANSWER).sum())
-        # did a booking follow within 14 days of this person's calls?
-        wins = 0
+
+        # Count PEOPLE, not calls. Someone rung four times who then books once
+        # is one win, not four - counting calls would flatter whoever dials most.
+        first_touch = g.groupby('phone')['date'].min()
+        won_people, won_calls, joined_people = set(), 0, set()
         for ph_, dd in zip(g['phone'], g['date']):
             arr = booked_after.get(ph_)
             if arr is None:
@@ -472,7 +503,22 @@ def build_team(events, cust, today):
             delta = (arr - np.datetime64(dd)) / np.timedelta64(1, 'D')
             after = delta[delta > 0]
             if len(after) and after.min() <= 14:
-                wins += 1
+                won_calls += 1
+                won_people.add(ph_)
+        # A membership is credited only when it starts after the first contact.
+        # Contacting someone who already holds a membership is a wasted call,
+        # counted separately rather than quietly credited as a conversion.
+        already_member = set()
+        for ph_, first in first_touch.items():
+            start = joined.get(ph_)
+            if start is None or pd.isna(start):
+                continue
+            if start >= first:
+                joined_people.add(ph_)
+            else:
+                already_member.add(ph_)
+        wins = won_calls
+        nudged_people = int(g['phone'].nunique())
         daily = (d.value_counts().sort_index()
                  .tail(45).rename_axis('d').reset_index(name='n'))
         people.append(dict(
@@ -486,8 +532,15 @@ def build_team(events, cust, today):
             connected=connected,
             no_answer=noans,
             connect_rate=100.0 * connected / len(g) if len(g) else 0.0,
-            booked_after=wins,
+            # headline pair: people contacted -> people who then acted
+            people_nudged=nudged_people,
+            people_booked=len(won_people),
+            people_joined=len(joined_people),
+            nudged_existing_members=len(already_member),
+            booked_after=wins,                       # calls followed by a booking
             win_rate=100.0 * wins / len(g) if len(g) else 0.0,
+            person_rate=100.0 * len(won_people) / nudged_people if nudged_people else 0.0,
+            join_rate=100.0 * len(joined_people) / nudged_people if nudged_people else 0.0,
             active_days=int(d.nunique()),
             avg_per_active_day=round(len(g) / max(d.nunique(), 1), 1),
             last_active=(d.max().strftime('%Y-%m-%d') if len(d) else None),
