@@ -91,6 +91,16 @@ if "fetch('/api/index?route=data'" not in body:
 # needs at runtime must sit above it. This caught the refresh handler and
 # showStamp silently vanishing from the hosted build while the local file
 # still worked.
+# The shared helpers must be declared before renderAll, not inside it.
+# When they lived inside, anything running outside renderAll - the refresh
+# handler, the stamp - died with "fmt is not defined" only at click time,
+# which no page-load check would catch.
+_helpers = body.find('const fmt =')
+_render = body.find('function renderAll')
+if _helpers == -1 or _render == -1 or _helpers > _render:
+    raise SystemExit('FAIL: fmt/esc/pct must be declared at module scope, '
+                     'above renderAll - otherwise the refresh handler cannot see them')
+
 for needed, msg in [('function showStamp', 'the last-updated stamp'),
                     ('wireRefresh', 'the refresh button handler'),
                     ('function renderTeam', 'the team panel'),

@@ -474,12 +474,16 @@
 
 <script>
 let D;
+/* Shared helpers live at module scope. They used to be declared inside
+   renderAll, which meant anything outside it - the refresh handler, the
+   last-updated stamp - threw "fmt is not defined" the moment it ran. */
 const $ = s => document.querySelector(s);
-function renderAll(){
-const fmt = n => n.toLocaleString('en-IN');
-const inr = n => '₹' + Math.round(n).toLocaleString('en-IN');
-const pct = n => n.toFixed(1) + '%';
+const fmt = n => Number(n || 0).toLocaleString('en-IN');
+const inr = n => '₹' + Math.round(n || 0).toLocaleString('en-IN');
+const pct = n => Number(n || 0).toFixed(1) + '%';
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function renderAll(){
 
 /* ---------- masthead ---------- */
 $('#st-cust').textContent = fmt(D.totals.customers) + ' customers';
@@ -745,17 +749,13 @@ render();
 
 /* ---------- refresh from the sheets on demand ---------- */
 function showStamp(){
-  /* self-contained on purpose: this runs outside renderAll, where the esc/fmt
-     helpers are not in scope */
   const el = document.getElementById('stamp-live');
   if (!el || typeof D === 'undefined' || !D) return;
-  const clean = t => String(t == null ? '' : t).replace(/[<>&]/g, '');
-  const num = n => Number(n || 0).toLocaleString('en-IN');
-  const when = clean(D.generated_at || D.generated || 'unknown');
+  const when = esc(D.generated_at || D.generated || 'unknown');
   let txt = 'Data last updated <b>' + when + '</b> &nbsp;India time';
   if (D.quality) {
-    txt += ' &nbsp;·&nbsp; ' + num(D.quality.unique_orders) + ' orders after removing '
-         + num(D.quality.duplicate_booking_rows) + ' duplicate rows';
+    txt += ' &nbsp;·&nbsp; ' + fmt(D.quality.unique_orders) + ' orders after removing '
+         + fmt(D.quality.duplicate_booking_rows) + ' duplicate rows';
   }
   el.innerHTML = txt;
 }
