@@ -22,6 +22,23 @@ from . import sources as S
 
 _EPOCH = dt.datetime(1899, 12, 30)
 
+# When one order number carries several statuses, the furthest-along wins.
+# An order that was ever marked Completed did complete; a later "Pending" row
+# is a stale export, not a reversal. Cancelled is deliberately lowest: a
+# cancelled row alongside a completed one means the completion is the later
+# truth. This is the rule that decides revenue, so it is stated once here.
+STATUS_RANK = {'Completed': 4, 'In Progress': 3, 'Pending': 2, 'Cancelled': 1}
+
+# Counters filled during the run and surfaced in the dashboard's data-quality
+# panel, so the cleaning is visible rather than silent.
+DQ = {}
+
+
+def _reset_dq():
+    DQ.clear()
+    DQ.update(dupe_booking_rows=0, status_conflicts=set(),
+              bad_phone_rows=0, undated_events=0)
+
 
 # ---------------------------------------------------------------- normalisers
 def phone(v):
@@ -111,6 +128,12 @@ def build_events(src):
                  source='%s:registrations' % book)
 
     # 2. bookings ------------------------------------------------------
+    # The two workbooks overlap heavily - 4,549 completed rows describe only
+    # 2,458 real orders - and 14 order numbers carry contradictory statuses
+    # (the same order logged Completed *and* Pending). Collapse to one record
+    # per order number first, resolving status by precedence, so an order can
+    # never be counted twice or counted under two different outcomes.
+    seen_orders = {}
     for book in (S.WA, S.CRM):
         df = src.frame(book, 'bookings')
         for d in df.to_dict('records'):
@@ -118,7 +141,7 @@ def build_events(src):
             status = clean(d.get('Status'))
             if not ph or status == 'Status':      # a repeated header row sits mid-sheet
                 continue
-            ident(ph, clean(d.get('Customer Name')), clean(d.get('City')))
+            order = clean(d.get('Order No.'))
             when = to_dt(d.get('Booking Date'))
             if pd.isna(when):
                 when = to_dt(d.get('Order Date'))
@@ -126,10 +149,29 @@ def build_events(src):
                 amt = float(d.get('Grand Total Amount'))
             except (TypeError, ValueError):
                 amt = None
-            emit(ph, when, 'booking', 'salon',
-                 detail=clean(d.get('Salon Name')), outcome=status,
-                 source='%s:bookings' % book,
-                 amount=amt, order_no=clean(d.get('Order No.')))
+            rec = dict(phone=ph, when=when, status=status, amount=amt,
+                       salon=clean(d.get('Salon Name')), order=order,
+                       name=clean(d.get('Customer Name')), city=clean(d.get('City')))
+            # rows with no order number cannot be de-duplicated; key them by
+            # the customer, timestamp and amount instead
+            key = order or 'noorder:%s|%s|%s' % (ph, when, amt)
+            prev = seen_orders.get(key)
+            if prev is None:
+                seen_orders[key] = rec
+                continue
+            DQ['dupe_booking_rows'] += 1
+            if STATUS_RANK.get(status, 0) > STATUS_RANK.get(prev['status'], 0):
+                if status != prev['status']:
+                    DQ['status_conflicts'].add(key)
+                seen_orders[key] = rec
+            elif status != prev['status']:
+                DQ['status_conflicts'].add(key)
+
+    for rec in seen_orders.values():
+        ident(rec['phone'], rec['name'], rec['city'])
+        emit(rec['phone'], rec['when'], 'booking', 'salon',
+             detail=rec['salon'], outcome=rec['status'], source='bookings',
+             amount=rec['amount'], order_no=rec['order'])
 
     # 3. whatsapp nudges ----------------------------------------------
     for d in src.frame(S.WA, 'Nudges Log').to_dict('records'):
@@ -382,10 +424,117 @@ def build_payload(events, cust, members, today):
     return payload
 
 
+# ---------------------------------------------------------------- team / KRA
+# Who owns which outreach. Vishakha and Shivani come from the CRM Owner column,
+# which is populated on every follow-up row. Rupam's membership calls carry no
+# owner column at all - that sheet is his, so the whole channel attributes to
+# him. If someone else starts working that sheet this attribution needs an
+# Owner column rather than a guess.
+MEMBERSHIP_OWNER = 'Rupam'
+
+# outcomes that mean the customer actually picked up
+CONNECTED = {'connected', 'call back', 'callback', 'interested', 'not interested',
+             'service taken', 'will book later', 'booked', 'follow up',
+             'just checking out the app', 'will take service later',
+             'no follow-up', 'not required', 'already membership',
+             'already taken membership'}
+NO_ANSWER = {'no answer', 'not answered', 'not connected', 'not answered ',
+             'disconected the call'}
+
+
+def build_team(events, cust, today):
+    """Per-caller activity: volume, recency windows, outcomes and a daily series.
+
+    Every figure is derived from the dated call events, so it is reproducible
+    from the sheets and needs no stored state.
+    """
+    calls = events[events.event_type.isin(['nudge_call', 'nudge_membership'])].copy()
+    calls['owner'] = calls['owner'].where(calls['owner'].notna(), None)
+    calls.loc[calls.event_type == 'nudge_membership', 'owner'] = MEMBERSHIP_OWNER
+    calls = calls[calls['owner'].notna() & calls['date'].notna()]
+
+    yesterday = today - pd.Timedelta(days=1)
+    booked_after = _booking_lookup(events)
+
+    people = []
+    for owner, g in calls.groupby('owner'):
+        d = g['date'].dt.normalize()
+        outcomes = g['outcome'].fillna('(blank)').str.strip()
+        low = outcomes.str.lower()
+        connected = int(low.isin(CONNECTED).sum())
+        noans = int(low.isin(NO_ANSWER).sum())
+        # did a booking follow within 14 days of this person's calls?
+        wins = 0
+        for ph_, dd in zip(g['phone'], g['date']):
+            arr = booked_after.get(ph_)
+            if arr is None:
+                continue
+            delta = (arr - np.datetime64(dd)) / np.timedelta64(1, 'D')
+            after = delta[delta > 0]
+            if len(after) and after.min() <= 14:
+                wins += 1
+        daily = (d.value_counts().sort_index()
+                 .tail(45).rename_axis('d').reset_index(name='n'))
+        people.append(dict(
+            owner=owner,
+            total=int(len(g)),
+            yesterday=int((d == yesterday).sum()),
+            today=int((d == today).sum()),
+            d7=int((d > today - pd.Timedelta(days=7)).sum()),
+            d30=int((d > today - pd.Timedelta(days=30)).sum()),
+            customers=int(g['phone'].nunique()),
+            connected=connected,
+            no_answer=noans,
+            connect_rate=100.0 * connected / len(g) if len(g) else 0.0,
+            booked_after=wins,
+            win_rate=100.0 * wins / len(g) if len(g) else 0.0,
+            active_days=int(d.nunique()),
+            avg_per_active_day=round(len(g) / max(d.nunique(), 1), 1),
+            last_active=(d.max().strftime('%Y-%m-%d') if len(d) else None),
+            top_outcomes=outcomes.value_counts().head(6).to_dict(),
+            daily=[dict(d=r.d.strftime('%Y-%m-%d'), n=int(r.n))
+                   for r in daily.itertuples()],
+        ))
+    people.sort(key=lambda p: -p['d30'])
+
+    # one combined daily series so the team's overall rhythm is visible
+    allday = (calls['date'].dt.normalize().value_counts().sort_index().tail(45))
+    return dict(
+        people=people,
+        team_daily=[dict(d=k.strftime('%Y-%m-%d'), n=int(v)) for k, v in allday.items()],
+        totals=dict(
+            calls=int(len(calls)),
+            yesterday=int((calls['date'].dt.normalize() == yesterday).sum()),
+            d7=int((calls['date'].dt.normalize() > today - pd.Timedelta(days=7)).sum()),
+            d30=int((calls['date'].dt.normalize() > today - pd.Timedelta(days=30)).sum()),
+        ),
+        note=('Vishakha and Shivani are attributed from the CRM Owner column. '
+              'Membership calls carry no owner, so the whole channel is '
+              'attributed to %s.' % MEMBERSHIP_OWNER),
+    )
+
+
+def _booking_lookup(events):
+    bk = events[(events.event_type == 'booking')
+                & (events.outcome != 'Cancelled') & events.date.notna()]
+    return bk.groupby('phone')['date'].apply(lambda s: np.sort(s.values))
+
+
 def run():
     """Full pipeline. Returns the dashboard payload dict."""
+    _reset_dq()
     src = S.SheetsSource()
     today = pd.Timestamp.now().normalize()
     events, ident, members = build_events(src)
     cust = build_customers(events, ident, members, today)
-    return build_payload(events, cust, members, today)
+    payload = build_payload(events, cust, members, today)
+    payload['team'] = build_team(events, cust, today)
+    payload['quality'] = dict(
+        duplicate_booking_rows=DQ['dupe_booking_rows'],
+        status_conflicts=len(DQ['status_conflicts']),
+        undated_events=int(events['date'].isna().sum()),
+        unique_orders=int(events[events.event_type == 'booking']['order_no'].nunique()),
+        booking_events=int((events.event_type == 'booking').sum()),
+    )
+    payload['generated_at'] = pd.Timestamp.now().strftime('%Y-%m-%d %H:%M')
+    return payload

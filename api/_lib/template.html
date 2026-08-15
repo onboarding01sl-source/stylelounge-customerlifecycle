@@ -62,6 +62,45 @@
     --ramp1:#5c3038; --ramp2:#7d4650; --ramp3:#9e5f6a; --ramp4:#bd8189; --ramp5:#d9a9ae;
   }
 
+
+  /* ---------- refresh control ---------- */
+  .refreshbar{margin-top:22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .btn{font-family:var(--sans);font-size:13.5px;font-weight:600;color:#fff;
+       background:var(--ink);border:0;border-radius:var(--pill);padding:12px 26px;
+       cursor:pointer;transition:background .15s}
+  .btn:hover:not(:disabled){background:var(--accent)}
+  .btn:disabled{opacity:.55;cursor:progress}
+  .refresh-msg{font-size:13px;color:var(--ink-2)}
+  .refresh-msg.err{color:var(--crit)}
+
+  /* ---------- team ---------- */
+  .teamgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));
+            gap:16px;margin-top:16px}
+  .person{background:var(--surface);border:1px solid var(--rule);border-radius:16px;padding:22px 24px}
+  .person h4{margin:0 0 2px;font-size:17px;font-weight:600}
+  .person .role{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;
+                color:var(--brass);font-weight:600;margin:0 0 16px}
+  .pgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+  .pgrid div{text-align:left}
+  .pgrid b{display:block;font-size:21px;font-weight:550;line-height:1}
+  .pgrid span{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+              color:var(--ink-3);margin-top:5px;display:block}
+  .meter{height:6px;background:var(--surface-2);border-radius:var(--pill);overflow:hidden;margin:3px 0 12px}
+  .meter i{display:block;height:6px;border-radius:var(--pill);background:var(--accent)}
+  .mlabel{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-2)}
+  .spark{display:flex;align-items:flex-end;gap:2px;height:44px;margin-top:6px}
+  .spark i{flex:1;background:var(--greige);border-radius:2px 2px 0 0;min-height:2px}
+  .spark i.hot{background:var(--accent)}
+  .outc{font-size:12.5px;color:var(--ink-2);margin-top:12px;padding-top:12px;
+        border-top:1px solid var(--hair);line-height:1.7}
+  .outc b{color:var(--ink);font-weight:600}
+  .bigspark{display:flex;align-items:flex-end;gap:3px;height:120px}
+  .bigspark i{flex:1;background:var(--accent);border-radius:3px 3px 0 0;min-height:2px;
+              opacity:.85;transition:opacity .12s}
+  .bigspark i:hover{opacity:1}
+  .sparkx{display:flex;justify-content:space-between;font-size:11px;
+          color:var(--ink-3);margin-top:8px}
+
   *{box-sizing:border-box}
   body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
        font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
@@ -139,7 +178,8 @@
   .fmeta{font-size:12.5px;color:var(--ink-3);margin-left:9px;font-weight:400;white-space:nowrap}
   .fstep .flbl{font-size:13px;color:var(--ink-2);text-align:right}
 
-  /* ---------- explorer ---------- */
+  
+/* ---------- explorer ---------- */
   .tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
   input[type=search]{flex:1;min-width:220px;padding:11px 18px;border:1px solid var(--rule);
     border-radius:var(--pill);background:var(--surface);color:var(--ink);
@@ -232,6 +272,10 @@
      <span id="st-ev"></span><span class="dot"></span>
      <span>Sources: WA Marketing · CRM Style Lounge · Rupam Membership · Membership Tracker</span>
      <span class="dot"></span><span id="st-date"></span></p>
+  <div class="refreshbar">
+    <button id="btn-refresh" class="btn">Refresh from the sheets</button>
+    <span id="refresh-msg" class="refresh-msg"></span>
+  </div>
 </header>
 
 <section>
@@ -303,6 +347,43 @@
       <div id="mem"></div></div>
     <div class="chart"><h4>Membership call outcomes</h4><p class="cap">Logged result of each membership call.</p>
       <div id="memout"></div></div>
+  </div>
+</section>
+
+<section>
+  <h2>Who is calling, and how much</h2>
+  <p class="sub">Activity per caller, counted from dated call records rather than
+     self-reporting. <span id="team-note"></span></p>
+  <div class="kpis" id="team-kpis"></div>
+  <div id="team-cards" class="teamgrid"></div>
+  <div class="chart" style="margin-top:20px">
+    <h4>Calls per day, whole team</h4>
+    <p class="cap">Last 45 days with any activity.</p>
+    <div id="team-spark"></div>
+  </div>
+  <div class="tblwrap" style="margin-top:18px">
+    <details><summary>Table view — every caller, every window</summary>
+      <table id="team-table"></table></details>
+  </div>
+</section>
+
+<section>
+  <h2>Data quality</h2>
+  <p class="sub">What had to be cleaned before any of the numbers above could be
+     trusted. These are issues in the source sheets, shown rather than hidden.</p>
+  <div class="kpis" id="quality"></div>
+  <div class="note" style="margin-top:18px">
+    <h4>How duplicates are resolved</h4>
+    <ul>
+      <li>The WA and CRM workbooks both hold the same bookings, so every order
+          is collapsed to <strong>one record keyed on order number</strong> before
+          anything is counted.</li>
+      <li>When one order carries several statuses, the furthest-along wins:
+          <code>Completed &gt; In Progress &gt; Pending &gt; Cancelled</code>. An order
+          once marked complete did complete; a later "Pending" row is a stale export.</li>
+      <li>Phone numbers arrive as integers, floats and quoted text. All are
+          normalised to 10 digits before joining.</li>
+    </ul>
   </div>
 </section>
 
@@ -463,6 +544,84 @@ bars($('#mem'), [['Nudged for membership', D.membership.nudged], ['…of those, 
      {color:'var(--accent)'});
 bars($('#memout'), Object.entries(D.mem_outcomes), {color:'var(--brass)'});
 
+/* ---------- team / KRA ---------- */
+function renderTeam(){
+  const T = D.team;
+  if (!T || !T.people || !T.people.length) return;
+  $('#team-note').textContent = T.note || '';
+
+  $('#team-kpis').innerHTML = [
+    ['Calls yesterday', fmt(T.totals.yesterday), 'whole team'],
+    ['Last 7 days',     fmt(T.totals.d7),        'whole team'],
+    ['Last 30 days',    fmt(T.totals.d30),       'whole team'],
+    ['Callers active',  fmt(T.people.length),    'with dated calls'],
+  ].map(([k,v,n]) => `<div class="kpi"><div class="k">${k}</div>
+      <div class="v">${v}</div><div class="n">${n}</div></div>`).join('');
+
+  const maxD30 = Math.max(...T.people.map(p => p.d30), 1);
+  $('#team-cards').innerHTML = T.people.map(p => {
+    const peak = Math.max(...p.daily.map(x => x.n), 1);
+    const spark = p.daily.map(x =>
+      `<i class="${x.n >= peak * 0.75 ? 'hot' : ''}" style="height:${Math.max(x.n/peak*100,4)}%"
+          title="${x.d}: ${x.n} call${x.n===1?'':'s'}"></i>`).join('');
+    const role = p.owner === 'Rupam' ? 'Membership' : 'CRM follow-ups';
+    return `<div class="person">
+      <h4>${esc(p.owner)}</h4>
+      <p class="role">${role}</p>
+      <div class="pgrid">
+        <div><b>${p.yesterday}</b><span>Yday</span></div>
+        <div><b>${p.d7}</b><span>7 days</span></div>
+        <div><b>${p.d30}</b><span>30 days</span></div>
+        <div><b>${fmt(p.total)}</b><span>All time</span></div>
+      </div>
+      <div class="mlabel"><span>Share of the last 30 days</span>
+        <span>${pct(100*p.d30/Math.max(T.totals.d30,1))}</span></div>
+      <div class="meter"><i style="width:${p.d30/maxD30*100}%"></i></div>
+      <div class="mlabel"><span>Reached the customer</span><span>${pct(p.connect_rate)}</span></div>
+      <div class="meter"><i style="width:${p.connect_rate}%;background:var(--brass)"></i></div>
+      <div class="spark">${spark}</div>
+      <div class="outc">
+        <b>${fmt(p.customers)}</b> customers contacted &middot;
+        <b>${p.avg_per_active_day}</b> calls per working day &middot;
+        <b>${p.active_days}</b> days active<br>
+        Booking within 14 days of a call: <b>${pct(p.win_rate)}</b> (${p.booked_after})<br>
+        Last active ${p.last_active || '—'}
+      </div></div>`;
+  }).join('');
+
+  const td = T.team_daily || [];
+  const peak = Math.max(...td.map(x => x.n), 1);
+  $('#team-spark').innerHTML =
+    `<div class="bigspark">${td.map(x =>
+      `<i style="height:${Math.max(x.n/peak*100,2)}%" title="${x.d}: ${x.n} calls"></i>`).join('')}</div>
+     <div class="sparkx"><span>${td.length ? td[0].d : ''}</span>
+       <span>peak ${peak} calls/day</span>
+       <span>${td.length ? td[td.length-1].d : ''}</span></div>`;
+
+  $('#team-table').innerHTML =
+    '<tr><th>Caller</th><th class="n">Yday</th><th class="n">7d</th><th class="n">30d</th>'
+    + '<th class="n">All time</th><th class="n">Customers</th><th class="n">Reached</th>'
+    + '<th class="n">Booked ≤14d</th><th class="n">Per day</th><th>Last active</th></tr>'
+    + T.people.map(p => `<tr><td>${esc(p.owner)}</td><td class="n">${p.yesterday}</td>
+        <td class="n">${p.d7}</td><td class="n">${p.d30}</td><td class="n">${fmt(p.total)}</td>
+        <td class="n">${fmt(p.customers)}</td><td class="n">${pct(p.connect_rate)}</td>
+        <td class="n">${p.booked_after}</td><td class="n">${p.avg_per_active_day}</td>
+        <td>${p.last_active || '—'}</td></tr>`).join('');
+}
+
+/* ---------- data quality ---------- */
+function renderQuality(){
+  const q = D.quality;
+  if (!q) return;
+  $('#quality').innerHTML = [
+    ['Duplicate rows merged', fmt(q.duplicate_booking_rows), 'same order in both books'],
+    ['Status conflicts', fmt(q.status_conflicts), 'resolved by precedence'],
+    ['Unique orders', fmt(q.unique_orders), 'after de-duplication'],
+    ['Events without a date', fmt(q.undated_events), 'excluded from time windows'],
+  ].map(([k,v,n]) => `<div class="kpi"><div class="k">${k}</div>
+      <div class="v">${v}</div><div class="n">${n}</div></div>`).join('');
+}
+
 /* ---------- explorer ---------- */
 const LABEL = {registration:'Registered', booking:'Booking', nudge_whatsapp:'WhatsApp nudge',
                nudge_call:'CRM call', nudge_membership:'Membership call', membership_start:'Membership started'};
@@ -514,6 +673,8 @@ document.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () =
   document.querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
   filter = b.dataset.f; open = null; render();
 }));
+renderTeam();
+renderQuality();
 render();
 }  /* end renderAll */
 

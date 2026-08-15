@@ -65,6 +65,8 @@ class handler(BaseHTTPRequestHandler):
                 payload = pipeline.run()
                 if store.available():
                     try:
+                        store.append_history(payload)
+                        payload['kra_history'] = store.load_history() or {}
                         store.save(payload)
                     except Exception:                  # noqa: BLE001
                         traceback.print_exc()          # serving still succeeds
@@ -79,6 +81,8 @@ class handler(BaseHTTPRequestHandler):
         try:
             from _lib import pipeline
             payload = pipeline.run()
+            days = store.append_history(payload)
+            payload['kra_history'] = store.load_history() or {}
             stored = store.save(payload) if store.available() else 0
             self._json(200, {
                 'ok': True,
@@ -89,6 +93,7 @@ class handler(BaseHTTPRequestHandler):
                 'timelines': len(payload.get('timelines', [])),
                 'cached_bytes': stored,
                 'cache': 'stored' if stored else 'none (no store configured)',
+                'kra_days_recorded': days,
             })
         except Exception as exc:                       # noqa: BLE001
             traceback.print_exc()

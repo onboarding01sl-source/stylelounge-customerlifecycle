@@ -68,6 +68,54 @@ def save(payload):
     return len(b64)
 
 
+HIST_KEY = 'sl:lifecycle:kra'
+HIST_DAYS = 400
+
+
+def append_history(payload):
+    """Record one dated snapshot of each caller's numbers.
+
+    Most KRA figures can be recomputed from the sheets, because the CRM tab
+    keeps a dated column per day. But those columns get trimmed eventually, and
+    the membership sheet only ever stores the *latest* contact date - so once a
+    caller is re-contacted, yesterday's activity is gone from the source. This
+    keeps an append-only record so the history survives either way.
+    """
+    if not available():
+        return 0
+    day = payload.get('generated')
+    people = payload.get('team', {}).get('people', [])
+    if not day or not people:
+        return 0
+    hist = load_history() or {}
+    hist[day] = {
+        p['owner']: {'calls': p['total'], 'yesterday': p['yesterday'],
+                     'd7': p['d7'], 'd30': p['d30'],
+                     'connected': p['connected'], 'booked_after': p['booked_after'],
+                     'customers': p['customers']}
+        for p in people
+    }
+    for old in sorted(hist)[:-HIST_DAYS]:
+        hist.pop(old, None)
+    blob = gzip.compress(json.dumps(hist).encode('utf-8'), 9)
+    _call('set/%s' % HIST_KEY, data=base64.b64encode(blob))
+    return len(hist)
+
+
+def load_history():
+    """Every stored daily snapshot, or None."""
+    try:
+        res = _call('get/%s' % HIST_KEY)
+    except (urllib.error.URLError, OSError, ValueError):
+        return None
+    if not res or not res.get('result'):
+        return None
+    try:
+        return json.loads(gzip.decompress(base64.b64decode(res['result'])).decode('utf-8'))
+    except Exception:                                      # noqa: BLE001
+        return None
+
+
 def load():
     """Return the cached payload dict, or None if absent/unreadable."""
     try:
