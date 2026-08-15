@@ -457,6 +457,22 @@ def build_payload(events, cust, members, today):
 # Owner column rather than a guess.
 MEMBERSHIP_OWNER = 'Rupam'
 
+# Callers have different jobs, so they are scored on different outcomes.
+# Shivani and Vishakha work the CRM follow-up list to get people booking
+# through the app; Rupam works the membership list. Showing bookings against
+# Rupam, or membership against the other two, measures them on work they were
+# never asked to do.
+ROLES = {
+    'Rupam':    dict(role='membership', team='Membership',
+                     goal_key='people_joined', goal_label='bought a membership'),
+    'Shivani':  dict(role='bookings', team='CRM follow-ups',
+                     goal_key='people_booked', goal_label='booked after the call'),
+    'Vishakha': dict(role='bookings', team='CRM follow-ups',
+                     goal_key='people_booked', goal_label='booked after the call'),
+}
+DEFAULT_ROLE = dict(role='bookings', team='Follow-ups',
+                    goal_key='people_booked', goal_label='booked after the call')
+
 # outcomes that mean the customer actually picked up
 CONNECTED = {'connected', 'call back', 'callback', 'interested', 'not interested',
              'service taken', 'will book later', 'booked', 'follow up',
@@ -548,6 +564,16 @@ def build_team(events, cust, today):
             daily=[dict(d=r.d.strftime('%Y-%m-%d'), n=int(r.n))
                    for r in daily.itertuples()],
         ))
+    for p in people:
+        meta = ROLES.get(p['owner'], DEFAULT_ROLE)
+        p.update(role=meta['role'], team=meta['team'],
+                 goal_label=meta['goal_label'],
+                 goal=p[meta['goal_key']],
+                 goal_rate=(100.0 * p[meta['goal_key']] / p['people_nudged']
+                            if p['people_nudged'] else 0.0))
+        # a wasted-call signal only means something on the membership list
+        if meta['role'] != 'membership':
+            p['nudged_existing_members'] = 0
     people.sort(key=lambda p: -p['d30'])
 
     # one combined daily series so the team's overall rhythm is visible
@@ -589,5 +615,10 @@ def run():
         unique_orders=int(events[events.event_type == 'booking']['order_no'].nunique()),
         booking_events=int((events.event_type == 'booking').sum()),
     )
-    payload['generated_at'] = pd.Timestamp.now().strftime('%Y-%m-%d %H:%M')
+    # Vercel runs in UTC; the team reads this in India, so show both rather
+    # than a bare time that is five and a half hours out.
+    now_utc = pd.Timestamp.now(tz='UTC')
+    ist = now_utc.tz_convert('Asia/Kolkata')
+    payload['generated_at'] = ist.strftime('%d %b %Y, %I:%M %p')
+    payload['generated_iso'] = now_utc.isoformat()
     return payload

@@ -87,5 +87,17 @@ for bad, msg in [('decryptPayload', 'decryption code survived'),
 if "fetch('/api/index?route=data'" not in body:
     raise SystemExit('FAIL: data fetch missing or not pointing at the function')
 
+# Everything from the boot marker down is discarded, so anything the page
+# needs at runtime must sit above it. This caught the refresh handler and
+# showStamp silently vanishing from the hosted build while the local file
+# still worked.
+for needed, msg in [('function showStamp', 'the last-updated stamp'),
+                    ('wireRefresh', 'the refresh button handler'),
+                    ('function renderTeam', 'the team panel'),
+                    ('function renderQuality', 'the data-quality panel')]:
+    if needed not in body:
+        raise SystemExit('FAIL: %s was cut from the hosted build - move it '
+                         'above the boot marker in template.html' % msg)
+
 print('wrote %s (%.1f KB)' % (OUT, os.path.getsize(OUT) / 1024))
 print('checks passed: no gate, no decryption, fetches /api/data')

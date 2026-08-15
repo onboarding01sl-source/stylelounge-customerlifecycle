@@ -27,6 +27,7 @@
     --ink:#181818; --ink-2:#6b6459; --ink-3:#948d80;
     --rule:#e4e0d7; --hair:#efece5;
     --accent:#49252f; --accent-soft:#f3ebe9; --brass:#857860; --on-accent:#fff;
+    --btn-bg:#181818; --btn-fg:#ffffff;
     --cream:#e7d4bb; --greige:#cfc9bd;
     /* multi-series charts keep the CVD-validated palette: those colours carry
        identity, and brand warmth cannot separate three series safely */
@@ -45,6 +46,7 @@
       --ink:#f6f4ef; --ink-2:#b3ac9f; --ink-3:#8a8478;
       --rule:#302e2a; --hair:#262521;
       --accent:#d9a9ae; --accent-soft:#2a1e21; --brass:#b9a985; --on-accent:#1a1a18;
+      --btn-bg:#f0ede6; --btn-fg:#141413;
       --cream:#e7d4bb; --greige:#cfc9bd;
       --s1:#3987e5; --s2:#d95926; --s3:#199e70;
       --good:#0ca30c; --warn:#fab219; --crit:#d03b3b;
@@ -57,6 +59,7 @@
     --ink:#f6f4ef; --ink-2:#b3ac9f; --ink-3:#8a8478;
     --rule:#302e2a; --hair:#262521;
     --accent:#d9a9ae; --accent-soft:#2a1e21; --brass:#b9a985; --on-accent:#1a1a18;
+    --btn-bg:#f0ede6; --btn-fg:#141413;
     --cream:#e7d4bb; --greige:#cfc9bd;
     --s1:#3987e5; --s2:#d95926; --s3:#199e70;
     --ramp1:#5c3038; --ramp2:#7d4650; --ramp3:#9e5f6a; --ramp4:#bd8189; --ramp5:#d9a9ae;
@@ -65,11 +68,25 @@
 
   /* ---------- refresh control ---------- */
   .refreshbar{margin-top:22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-  .btn{font-family:var(--sans);font-size:13.5px;font-weight:600;color:#fff;
-       background:var(--ink);border:0;border-radius:var(--pill);padding:12px 26px;
-       cursor:pointer;transition:background .15s}
-  .btn:hover:not(:disabled){background:var(--accent)}
-  .btn:disabled{opacity:.55;cursor:progress}
+  .btn{font-family:var(--sans);font-size:14px;font-weight:600;
+       color:var(--btn-fg);background:var(--btn-bg);border:0;border-radius:var(--pill);
+       padding:13px 28px;cursor:pointer;transition:filter .15s;
+       display:inline-flex;align-items:center;gap:9px}
+  .btn:hover:not(:disabled){filter:brightness(1.35)}
+  .btn:disabled{cursor:progress;filter:none}
+  .btn .spin{width:13px;height:13px;border:2px solid var(--btn-fg);border-right-color:transparent;
+             border-radius:50%;display:none;animation:sp .7s linear infinite}
+  .btn.busy .spin{display:inline-block}
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  /* progress bar for the refresh */
+  .prog{height:6px;background:var(--surface-2);border-radius:var(--pill);
+        overflow:hidden;max-width:420px;margin-top:12px;display:none}
+  .prog.on{display:block}
+  .prog i{display:block;height:6px;width:0;background:var(--accent);
+          border-radius:var(--pill);transition:width .4s ease}
+  .stamp-live{font-size:13px;color:var(--ink-2);margin-top:10px}
+  .stamp-live b{color:var(--ink);font-weight:600}
   .refresh-msg{font-size:13px;color:var(--ink-2)}
   .refresh-msg.err{color:var(--crit)}
 
@@ -116,6 +133,15 @@
   .conv-b b{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;display:block;line-height:1}
   .conv-b span{font-size:11.5px;color:var(--ink-3);display:block;margin-top:3px}
   .conv-arrow{color:var(--ink-3);font-size:15px}
+
+
+  .goal{margin:2px 0 18px;padding:16px 18px;background:var(--accent-soft);
+        border-radius:12px}
+  .goal-n{font-size:42px;font-weight:600;line-height:1;letter-spacing:-.02em;color:var(--accent)}
+  .goal-l{font-size:14px;font-weight:600;color:var(--ink);margin-top:6px}
+  .goal-s{font-size:12.5px;color:var(--ink-2);margin-top:3px}
+  .flag{margin-top:12px;font-size:12.5px;color:var(--crit);background:var(--surface-2);
+        border-radius:10px;padding:9px 12px}
 
   *{box-sizing:border-box}
   body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
@@ -289,9 +315,11 @@
      <span>Sources: WA Marketing · CRM Style Lounge · Rupam Membership · Membership Tracker</span>
      <span class="dot"></span><span id="st-date"></span></p>
   <div class="refreshbar">
-    <button id="btn-refresh" class="btn">Refresh from the sheets</button>
+    <button id="btn-refresh" class="btn"><span class="spin"></span><span id="btn-label">Refresh now</span></button>
     <span id="refresh-msg" class="refresh-msg"></span>
   </div>
+  <div class="prog" id="prog"><i></i></div>
+  <p class="stamp-live" id="stamp-live"></p>
 </header>
 
 <section>
@@ -595,31 +623,30 @@ function renderTeam(){
     const spark = p.daily.map(x =>
       `<i class="${x.n >= peak * 0.75 ? 'hot' : ''}" style="height:${Math.max(x.n/peak*100,4)}%"
           title="${x.d}: ${x.n} call${x.n===1?'':'s'}"></i>`).join('');
-    const role = p.owner === 'Rupam' ? 'Membership' : 'CRM follow-ups';
     return `<div class="person">
       <h4>${esc(p.owner)}</h4>
-      <p class="role">${role}</p>
+      <p class="role">${esc(p.team)}</p>
+
+      <div class="goal">
+        <div class="goal-n">${fmt(p.goal)}</div>
+        <div class="goal-l">${p.goal === 1 ? "person" : "people"} ${esc(p.goal_label)}</div>
+        <div class="goal-s">out of <b>${fmt(p.people_nudged)}</b> contacted
+          &middot; ${pct(p.goal_rate)}</div>
+      </div>
+
       <div class="pgrid">
         <div><b>${p.yesterday}</b><span>Yday</span></div>
         <div><b>${p.d7}</b><span>7 days</span></div>
         <div><b>${p.d30}</b><span>30 days</span></div>
         <div><b>${fmt(p.total)}</b><span>All time</span></div>
       </div>
-      <div class="mlabel"><span>Share of the last 30 days</span>
-        <span>${pct(100*p.d30/Math.max(T.totals.d30,1))}</span></div>
-      <div class="meter"><i style="width:${p.d30/maxD30*100}%"></i></div>
+
       <div class="mlabel"><span>Reached the customer</span><span>${pct(p.connect_rate)}</span></div>
       <div class="meter"><i style="width:${p.connect_rate}%;background:var(--brass)"></i></div>
       <div class="spark">${spark}</div>
-      <div class="result">
-        <div class="rline"><span>People contacted</span><b>${fmt(p.people_nudged)}</b></div>
-        <div class="rline"><span>…who then booked</span><b>${fmt(p.people_booked)}</b></div>
-        ${p.owner === 'Rupam' || p.people_joined ? `
-        <div class="rline"><span>…who bought a membership</span><b>${fmt(p.people_joined)}</b></div>` : ''}
-        ${p.nudged_existing_members ? `
-        <div class="rline warn"><span>Already members when called</span>
-          <b>${fmt(p.nudged_existing_members)}</b></div>` : ''}
-      </div>
+      ${p.nudged_existing_members ? `
+      <div class="flag">${fmt(p.nudged_existing_members)} of the people called
+        already held a membership</div>` : ''}
       <div class="outc">
         <b>${p.avg_per_active_day}</b> calls per working day &middot;
         <b>${p.active_days}</b> days active &middot; last active ${p.last_active || '—'}
@@ -712,8 +739,84 @@ document.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () =
 }));
 renderTeam();
 renderQuality();
+showStamp();
 render();
 }  /* end renderAll */
+
+/* ---------- refresh from the sheets on demand ---------- */
+function showStamp(){
+  /* self-contained on purpose: this runs outside renderAll, where the esc/fmt
+     helpers are not in scope */
+  const el = document.getElementById('stamp-live');
+  if (!el || typeof D === 'undefined' || !D) return;
+  const clean = t => String(t == null ? '' : t).replace(/[<>&]/g, '');
+  const num = n => Number(n || 0).toLocaleString('en-IN');
+  const when = clean(D.generated_at || D.generated || 'unknown');
+  let txt = 'Data last updated <b>' + when + '</b> &nbsp;India time';
+  if (D.quality) {
+    txt += ' &nbsp;·&nbsp; ' + num(D.quality.unique_orders) + ' orders after removing '
+         + num(D.quality.duplicate_booking_rows) + ' duplicate rows';
+  }
+  el.innerHTML = txt;
+}
+
+(function wireRefresh(){
+  const btn  = document.getElementById('btn-refresh');
+  const lbl  = document.getElementById('btn-label');
+  const msg  = document.getElementById('refresh-msg');
+  const prog = document.getElementById('prog');
+  const bar  = prog && prog.querySelector('i');
+  if (!btn) return;
+
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    btn.classList.add('busy');
+    lbl.textContent = 'Refreshing…';
+    msg.className = 'refresh-msg';
+    prog.classList.add('on');
+    bar.style.width = '4%';
+
+    // A full read of the four sheets takes roughly 25s. There is no real
+    // progress to report mid-flight, so the bar advances against that
+    // expectation and holds at 92% until the response actually lands —
+    // never showing 100% before the work is done.
+    const EXPECTED = 25000;
+    const t0 = Date.now();
+    const tick = setInterval(() => {
+      const s = (Date.now() - t0) / 1000;
+      bar.style.width = Math.min(92, 4 + (Date.now()-t0) / EXPECTED * 88) + '%';
+      msg.textContent = 'Reading all four sheets… ' + s.toFixed(0) + 's';
+    }, 250);
+
+    try {
+      const r = await fetch('/api/index?route=refresh', {cache:'no-store'});
+      const j = await r.json();
+      if (!r.ok || j.ok === false) throw new Error(j.detail || j.error || ('HTTP ' + r.status));
+
+      msg.textContent = 'Loading the new numbers…';
+      const fresh = await fetch('/api/index?route=data', {cache:'no-store'});
+      D = await fresh.json();
+
+      clearInterval(tick);
+      bar.style.width = '100%';
+      renderAll();
+      showStamp();
+      msg.textContent = 'Updated in ' + j.seconds + 's — ' + fmt(j.customers)
+                      + ' customers, ' + fmt(j.events) + ' events.';
+      setTimeout(() => { prog.classList.remove('on'); bar.style.width = '0'; }, 1400);
+    } catch (err) {
+      clearInterval(tick);
+      prog.classList.remove('on');
+      bar.style.width = '0';
+      msg.className = 'refresh-msg err';
+      msg.textContent = 'Refresh failed: ' + String(err.message || err);
+    } finally {
+      btn.disabled = false;
+      btn.classList.remove('busy');
+      lbl.textContent = 'Refresh now';
+    }
+  });
+})();
 
 /* ---------- boot: fetch the payload from the authenticated API ---------- */
 (async function boot(){
